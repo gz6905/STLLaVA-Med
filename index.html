@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="STLLaVA-Med: Self-Training Large Language and Vision Assistant for Medical Question-Answering">
+  <meta name="keywords" content="STLLaVA-Med, Medical VQA, Self-Training, DPO, LVLM, Medical AI, Visual Question Answering">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>STLLaVA-Med: Self-Training Large Language and Vision Assistant for Medical</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+
+  <style>
+    :root {
+      --teal: #0d9488;
+      --teal-light: #ccfbf1;
+      --teal-dark: #115e59;
+      --surface: #f0fdfa;
+      --text-main: #134e4a;
+      --text-body: #4b5563;
+      --border: #d1d5db;
+      --rose: #e11d48;
+      --rose-light: #ffe4e6;
+      --amber-light: #fef3c7;
+      --amber-border: #d97706;
+      --blue-light: #dbeafe;
+      --blue-border: #2563eb;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text-main);
+    }
+
+    .publication-title {
+      font-family: 'Newsreader', serif !important;
+      font-weight: 700 !important;
+      letter-spacing: -0.02em;
+      line-height: 1.2 !important;
+    }
+
+    .title {
+      font-family: 'Newsreader', serif !important;
+      color: var(--text-main);
+    }
+
+    .content p, .content li {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--text-body);
+      line-height: 1.7;
+      font-size: 0.96rem;
+    }
+
+    .section-bar {
+      width: 50px;
+      height: 4px;
+      background: var(--teal);
+      border-radius: 2px;
+      margin: 0 auto 26px auto;
+    }
+
+    /* Venue badge */
+    .venue-pill {
+      display: inline-block;
+      background: var(--teal);
+      color: white;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 5px 18px;
+      border-radius: 20px;
+      letter-spacing: 0.04em;
+      margin-top: 12px;
+    }
+
+    /* Org logos row */
+    .org-logos {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 36px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      margin-bottom: 10px;
+    }
+    .org-logos img {
+      height: 55px;
+      object-fit: contain;
+      opacity: 0.85;
+      transition: opacity 0.2s;
+    }
+    .org-logos img:hover {
+      opacity: 1;
+    }
+
+    /* Callout boxes */
+    .callout {
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      border-left: 4px solid;
+      font-size: 0.94rem;
+    }
+    .callout.teal { background: var(--teal-light); border-color: var(--teal); }
+    .callout.amber { background: var(--amber-light); border-color: var(--amber-border); }
+    .callout.blue { background: var(--blue-light); border-color: var(--blue-border); }
+    .callout.rose { background: var(--rose-light); border-color: var(--rose); }
+    .callout p { margin-bottom: 0 !important; color: var(--text-main) !important; }
+    .callout .callout-label {
+      font-weight: 700; font-size: 0.78rem; text-transform: uppercase;
+      letter-spacing: 0.06em; margin-bottom: 5px; display: block;
+    }
+    .callout.teal .callout-label { color: var(--teal-dark); }
+    .callout.amber .callout-label { color: #92400e; }
+    .callout.rose .callout-label { color: #9f1239; }
+
+    /* Contribution cards */
+    .contrib-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      height: 100%;
+      border-top: 3px solid var(--teal);
+    }
+    .contrib-card h4 {
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      font-weight: 700 !important;
+      font-size: 1.05rem !important;
+      margin-bottom: 10px !important;
+      color: var(--text-main);
+    }
+    .contrib-card p { font-size: 0.92rem; line-height: 1.6; }
+    .contrib-card .card-icon {
+      font-size: 1.6rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    /* Stage blocks */
+    .stage-block {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 28px;
+    }
+    .stage-block h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif !important;
+      font-weight: 700 !important;
+      font-size: 1.15rem !important;
+      margin-bottom: 14px !important;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .stage-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--teal); color: white;
+      font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+    }
+
+    /* Tables */
+    .med-table {
+      border-radius: 10px; overflow: hidden;
+      box-shadow: 0 2px 10px rgba(13,148,136,0.08);
+      border: 1px solid var(--border);
+    }
+    .med-table table { margin-bottom: 0 !important; }
+    .med-table thead th {
+      background: var(--text-main) !important; color: white !important;
+      font-weight: 600; font-size: 0.82rem; padding: 11px 10px;
+      border: none !important; text-align: center !important;
+    }
+    .med-table thead th:first-child { text-align: left !important; }
+    .med-table thead th:nth-child(2) { text-align: left !important; }
+    .med-table tbody td {
+      text-align: center; padding: 9px 10px;
+      font-size: 0.86rem; border-color: var(--border) !important;
+    }
+    .med-table tbody td:first-child { text-align: left; font-weight: 500; }
+    .med-table tbody td:nth-child(2) { text-align: left; }
+    .med-table .ours-row { background: var(--teal-light) !important; }
+    .med-table .ours-row td { font-weight: 600; color: var(--teal-dark); }
+    .med-table .ref-row { background: #f9fafb; }
+    .med-table .sep-row td { padding: 0; height: 2px; background: var(--border); }
+
+    /* Stat pills */
+    .stat-row {
+      display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;
+      padding: 24px 0;
+    }
+    .stat-pill {
+      text-align: center; background: white; border: 1px solid var(--border);
+      border-radius: 12px; padding: 18px 28px;
+    }
+    .stat-pill .stat-num {
+      font-family: 'Newsreader', serif; font-size: 2rem; font-weight: 700;
+      color: var(--teal); line-height: 1.1;
+    }
+    .stat-pill .stat-desc {
+      font-size: 0.82rem; color: var(--text-body); margin-top: 4px;
+    }
+
+    /* Figure styling */
+    .fig-box {
+      background: #fafafa; border: 1px dashed var(--border);
+      border-radius: 10px; padding: 16px; text-align: center;
+    }
+    .fig-box img { max-width: 100%; border-radius: 6px; }
+    .fig-cap {
+      font-size: 0.84rem; color: var(--text-body); margin-top: 10px;
+      line-height: 1.5; max-width: 85%; margin-left: auto; margin-right: auto;
+    }
+
+    pre {
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.82rem !important; border-radius: 10px !important;
+      border: 1px solid var(--border) !important;
+    }
+
+    .hero.teaser .hero-body { padding-top: 0; }
+
+    @media (max-width: 768px) {
+      .stat-row { gap: 16px; }
+      .stat-pill { padding: 14px 20px; }
+      .stat-pill .stat-num { font-size: 1.5rem; }
+      .org-logos { gap: 20px; }
+      .org-logos img { height: 40px; }
+    }
+  </style>
+</head>
+<body>
+
+
+<!-- ==================== HERO ==================== -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">STLLaVA-Med: Self-Training Large Language<br>and Vision Assistant for Medical</h1>
+
+          <div class="venue-pill">EMNLP 2024</div>
+
+          <div class="is-size-5 publication-authors" style="margin-top: 18px;">
+            <span class="author-block">
+              <a href="https://github.com/heliossun">Guohao Sun</a><sup>1</sup>,</span>
+            <span class="author-block">
+              Can Qin<sup>2</sup>,</span>
+            <span class="author-block">
+              Huazhu Fu<sup>3</sup>,</span>
+            <span class="author-block">
+              Linwei Wang<sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://ztao.cc/index.html">Zhiqiang Tao</a><sup>1</sup></span>
+          </div>
+
+          <div class="is-size-5 publication-authors" style="margin-top: 8px;">
+            <span class="author-block"><sup>1</sup>Rochester Institute of Technology,</span>
+            <span class="author-block"><sup>2</sup>Salesforce AI Research,</span>
+            <span class="author-block"><sup>3</sup>Institute of High Performance Computing, A*STAR</span>
+          </div>
+
+          <!-- Organization logos -->
+          <div class="org-logos">
+            <!-- TODO: Add your logo files to ./static/images/ -->
+            <img src="./static/images/logo_rit.png" alt="RIT">
+            <img src="./static/images/logo_salesforce.png" alt="Salesforce">
+            <img src="./static/images/logo_astar.png" alt="A*STAR">
+          </div>
+
+          <!-- Links -->
+          <div class="column has-text-centered" style="margin-top: 8px;">
+            <div class="publication-links">
+              <span class="link-block">
+                <a href="https://aclanthology.org/2024.emnlp-main.1119/"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fas fa-file-pdf"></i></span>
+                  <span>Paper</span>
+                </a>
+              </span>
+              <span class="link-block">
+                <a href="https://github.com/heliossun/STLLaVA-Med"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon"><i class="fab fa-github"></i></span>
+                  <span>Code</span>
+                </a>
+              </span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== TEASER ==================== -->
+<section class="hero teaser">
+  <div class="container is-max-desktop">
+    <div class="hero-body">
+      <!-- TODO: Replace with Figure 1 from the paper (data comparison + VQA bar charts).
+           Save as: ./static/images/teaser.png -->
+      <div class="fig-box">
+        <img src="./static/images/teaser.png" alt="STLLaVA-Med data efficiency and performance comparison">
+      </div>
+      <h2 class="subtitle has-text-centered" style="margin-top: 18px; font-size: 1.05rem; line-height: 1.6;">
+        <b>STLLaVA-Med</b> achieves competitive performance with LLaVA-Med while using only
+        <b>9%</b> of the medical training data, through a self-training pipeline guided by
+        Direct Preference Optimization (DPO) and GPT-4o supervision.
+      </h2>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== KEY STATS ==================== -->
+<section class="section" style="padding: 20px 0 36px 0;">
+  <div class="container is-max-desktop">
+    <div class="stat-row">
+      <div class="stat-pill">
+        <div class="stat-num">9%</div>
+        <div class="stat-desc">Medical data used<br>vs. LLaVA-Med (530K→50K)</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-num">3</div>
+        <div class="stat-desc">VQA benchmarks<br>VQA-RAD, SLAKE, PVQA</div>
+      </div>
+      <div class="stat-pill">
+        <div class="stat-num">Zero-shot</div>
+        <div class="stat-desc">Competitive performance<br>without task-specific training</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== ABSTRACT ==================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="section-bar"></div>
+        <div class="content has-text-justified">
+          <p>
+            Large Vision-Language Models (LVLMs) have shown significant potential in assisting
+            medical diagnosis by leveraging extensive biomedical datasets. However, the advancement
+            of medical image understanding and reasoning critically depends on building high-quality
+            visual instruction data, which is costly and labor-intensive to obtain, particularly in
+            the medical domain.
+          </p>
+          <p>
+            To mitigate this data-starving issue, we introduce <b>Self-Training Large Language and
+            Vision Assistant for Medicine (STLLaVA-Med)</b>. The proposed method is designed to train
+            a policy model (an LVLM) capable of <b>auto-generating medical visual instruction data</b>
+            to improve data efficiency, guided through Direct Preference Optimization (DPO).
+            Specifically, a more powerful and larger LVLM (e.g., GPT-4o) is involved as a biomedical
+            expert to oversee the DPO fine-tuning process on the auto-generated data, encouraging the
+            policy model to align efficiently with human preferences.
+          </p>
+          <p>
+            We validate the efficacy and data efficiency of STLLaVA-Med across three major medical
+            Visual Question Answering (VQA) benchmarks, demonstrating competitive zero-shot performance
+            with the utilization of only <b>9% of the medical data</b>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== MOTIVATION ==================== -->
+<section class="section" style="background: var(--surface);">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">The Data Challenge in Medical AI</h2>
+    <div class="section-bar"></div>
+
+    <div class="columns">
+      <div class="column is-4">
+        <div class="callout amber">
+          <span class="callout-label">Problem 1</span>
+          <p>
+            Medical data collection requires <b>specialized expertise from physicians</b> and
+            raises privacy concerns, making it both time-consuming and costly.
+          </p>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="callout amber">
+          <span class="callout-label">Problem 2</span>
+          <p>
+            Using large APIs (e.g., GPT-4) to generate medical data doesn't fully resolve
+            the <b>high API costs</b> and still requires large-scale pre-training data for
+            image-text alignment.
+          </p>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="callout teal">
+          <span class="callout-label">Our Solution</span>
+          <p>
+            STLLaVA-Med enables the model to <b>self-generate</b> medical instruction data,
+            supervised by GPT-4o through DPO. No medical pre-training needed — only
+            <b>50K samples</b> total.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== CONTRIBUTIONS ==================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Key Contributions</h2>
+    <div class="section-bar"></div>
+
+    <div class="columns" style="margin-top: 12px;">
+      <div class="column is-4">
+        <div class="contrib-card">
+          <span class="card-icon">🔄</span>
+          <h4>Self-Training Pipeline</h4>
+          <p>
+            A novel self-training approach for LVLMs that enhances medical reasoning skills
+            with less medical data, improving data efficiency for domain-specific training.
+          </p>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="contrib-card">
+          <span class="card-icon">📊</span>
+          <h4>Auto-Generated Preference Data</h4>
+          <p>
+            STLLaVA-Med automatically constructs medical instruction data, supervised by
+            GPT-4o and governed through DPO, allowing the LVLM to adhere to preferences
+            (detail, relevance, accuracy) in a self-training way.
+          </p>
+        </div>
+      </div>
+      <div class="column is-4">
+        <div class="contrib-card">
+          <span class="card-icon">🏥</span>
+          <h4>Data-Efficient Medical VQA</h4>
+          <p>
+            Competitive zero-shot performance on three major medical VQA benchmarks using
+            only 9% of the medical data compared to LLaVA-Med (50K vs 530K samples).
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== METHOD ==================== -->
+<section class="section" style="background: var(--surface);">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Method</h2>
+    <div class="section-bar"></div>
+
+    <!-- Pipeline figure -->
+    <!-- TODO: Replace with Figure 2 from the paper (full model architecture and pipeline).
+         Save as: ./static/images/pipeline.png -->
+    <div class="fig-box" style="margin-bottom: 24px;">
+      <img src="./static/images/pipeline.png" alt="STLLaVA-Med architecture and self-training pipeline">
+    </div>
+    <p class="fig-cap has-text-centered" style="margin-bottom: 32px;">
+      <b>Figure 2:</b> Model architecture and self-training pipeline. <b>Stage 1</b> optimizes the model
+      for medical image reasoning and learning to question. <b>Stage 2</b> prompts the model to
+      auto-generate preference data under GPT-4o guidance, then fine-tunes via DPO.
+    </p>
+
+    <!-- Stage 1 -->
+    <div class="stage-block">
+      <h3><span class="stage-num">1</span> Stage 1: Reasoning & Learning to Question</h3>
+      <div class="content has-text-justified">
+        <p>
+          The foundation of self-training is automatic question generation and answering.
+          We follow the SQ-LLaVA approach by adding a special token <code>&lt;vusr&gt;</code>
+          and setting question-tokens as learnable, jointly fine-tuning the policy model π<sub>θ</sub>
+          for both reasoning and questioning on visual instruction data.
+        </p>
+        <p>
+          The model optimizes two objectives simultaneously: <b>visual questioning</b> (L<sub>vq</sub>)
+          — learning to generate the next question given the image and conversation history —
+          and <b>answering</b> (L<sub>qa</sub>) — learning to generate answers conditioned on the
+          question. After this stage, the model can raise and answer questions for medical images
+          automatically.
+        </p>
+        <p>
+          For efficiency, LoRA adapters are used in both the vision encoder (rank=32, α=64) and
+          LLM (rank=128, α=256). Critically, <b>no medical image-text alignment pre-training is
+          needed</b> — pre-trained weights from general-purpose visual instruction tuning are loaded directly.
+        </p>
+      </div>
+    </div>
+
+    <!-- Stage 2 -->
+    <div class="stage-block">
+      <h3><span class="stage-num">2</span> Stage 2: Preference Revelation via DPO</h3>
+      <div class="content has-text-justified">
+        <p>
+          The trained model from Stage 1 is then used to <b>auto-generate preference data</b>.
+          We randomly sample 10K medical images and prompt π<sub>θ</sub> to generate questions.
+          For each question, the model generates two different answers (using temperature=1.2,
+          TopK=100, TopP=0.95 for diversity). GPT-4o then scores both answers on helpfulness,
+          relevance, accuracy, and level of detail, labeling them as <b>win</b> or <b>loss</b>.
+        </p>
+        <p>
+          The model is then fine-tuned through DPO, which fits an implicit reward to precisely
+          control generation behavior by the pre-defined preferences. The policy model π<sub>θ</sub>
+          and reference policy π<sub>ref</sub> are initialized from the same Stage 1 weights, and
+          only π<sub>θ</sub> is optimized.
+        </p>
+      </div>
+
+      <!-- TODO: Replace with Figure 3 from the paper (GPT-4o prompt design).
+           Save as: ./static/images/gpt4o_prompt.png -->
+      <div class="fig-box" style="max-width: 650px; margin: 16px auto 0 auto;">
+        <img src="./static/images/gpt4o_prompt.png" alt="GPT-4o prompt for preference scoring">
+      </div>
+      <p class="fig-cap has-text-centered">
+        <b>Figure 3:</b> Prompt design for GPT-4o to score the auto-generated answers. The higher-scoring
+        answer is designated as the winning response.
+      </p>
+    </div>
+
+    <!-- Data stats -->
+    <div class="stage-block">
+      <h3><span class="stage-num">📋</span> Training Data Statistics</h3>
+      <div class="content has-text-justified" style="margin-bottom: 16px;">
+        <p>
+          STLLaVA-Med skips the expensive medical pre-training stage entirely, using only
+          instruction fine-tuning data. Compared to LLaVA-Med's 530K+ total medical samples,
+          STLLaVA-Med uses only ~50K.
+        </p>
+      </div>
+      <div style="max-width: 450px; margin: 0 auto;">
+        <div class="med-table">
+          <table class="table is-fullwidth">
+            <thead>
+              <tr><th>Method</th><th>#Images</th><th>#QA-Pairs</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>LLaVA-Med<sub>pt</sub></td><td>467,710</td><td>467,710</td></tr>
+              <tr><td>LLaVA-Med<sub>ft</sub></td><td>56,708</td><td>164,231</td></tr>
+              <tr class="ours-row"><td>STLLaVA-Med (ours)</td><td>37,452</td><td>108,545</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="fig-cap has-text-centered" style="margin-top: 8px;">
+          <b>Table 1:</b> Medical training data comparison. STLLaVA-Med requires no pre-training data.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ==================== MAIN RESULTS ==================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Results: Zero-Shot Medical VQA</h2>
+    <div class="section-bar"></div>
+
+    <div class="content has-text-justified" style="max-width: 800px; margin: 0 auto 24px auto;">
+      <p>
+        We evaluate on three major medical VQA benchmarks: <b>VQA-RAD</b> (radiology),
+        <b>SLAKE</b> (multi-modal medical), and <b>PVQA</b> (pathology). Open-ended questions
+        are measured by Recall and F1 score; closed-ended questions by accuracy. All models
+        use a 7B LLM. STLLaVA-Med achieves competitive or better performance than LLaVA-Med
+        while using significantly less data.
+      </p>
+    </div>
+
+    <div class="med-table" style="margin-bottom: 16px; overflow-x: auto;">
+      <table class="table is-fullwidth" style="font-size: 0.83rem;">
+        <thead>
+          <tr>
+            <th style="min-width: 80px;">Dataset</th>
+            <th style="min-width: 140px;">Method</th>
+            <th colspan="3" style="text-align:center !important;">VQA-RAD</th>
+            <th colspan="3" style="text-align:center !important;">SLAKE</th>
+            <th colspan="3" style="text-align:center !important;">PVQA</th>
+          </tr>
+          <tr>
+            <th></th><th></th>
+            <th>Recall</th><th>F1</th><th>Closed</th>
+            <th>Recall</th><th>F1</th><th>Closed</th>
+            <th>Recall</th><th>F1</th><th>Closed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="ref-row">
+            <td rowspan="1">-</td>
+            <td>GPT-4o</td>
+            <td>51.60</td><td>9.23</td><td>63.97</td>
+            <td>59.06</td><td>8.90</td><td>71.63</td>
+            <td>24.14</td><td>3.29</td><td>75.97</td>
+          </tr>
+          <tr class="sep-row"><td colspan="11"></td></tr>
+          <tr>
+            <td rowspan="4">w/o<br>Med-IM</td>
+            <td>LLaVA-v1.5</td>
+            <td>23.63</td><td>9.53</td><td>50.74</td>
+            <td>35.23</td><td>8.84</td><td>52.16</td>
+            <td>11.85</td><td><b>2.73</b></td><td>52.76</td>
+          </tr>
+          <tr>
+            <td>SQ-LLaVA</td>
+            <td>23.91</td><td>6.29</td><td>52.57</td>
+            <td>40.04</td><td>9.65</td><td>57.45</td>
+            <td>11.24</td><td>2.63</td><td>53.73</td>
+          </tr>
+          <tr>
+            <td>Med-Flamingo</td>
+            <td>10.32</td><td>10.37</td><td>52.21</td>
+            <td>8.46</td><td>7.67</td><td>37.02</td>
+            <td>1.23</td><td>1.24</td><td>45.59</td>
+          </tr>
+          <tr>
+            <td>PMC-VQA</td>
+            <td>6.26</td><td>5.68</td><td>41.54</td>
+            <td>7.29</td><td>6.92</td><td>33.89</td>
+            <td>1.02</td><td>1.01</td><td>40.10</td>
+          </tr>
+          <tr class="sep-row"><td colspan="11"></td></tr>
+          <tr>
+            <td rowspan="3">Med-IM</td>
+            <td>LLaVA-Med</td>
+            <td>32.68</td><td>8.65</td><td>59.56</td>
+            <td>40.84</td><td>8.21</td><td>46.88</td>
+            <td><b>12.03</b></td><td>2.47</td><td><b>55.23</b></td>
+          </tr>
+          <tr>
+            <td>STLLaVA-Med w/o DPO</td>
+            <td>33.81</td><td>10.37</td><td>59.16</td>
+            <td>40.13</td><td>10.97</td><td>55.53</td>
+            <td>10.38</td><td>2.68</td><td>52.05</td>
+          </tr>
+          <tr class="ours-row">
+            <td>STLLaVA-Med</td>
+            <td><b>37.12</b></td><td><b>10.83</b></td><td><b>60.35</b></td>
+            <td><b>46.69</b></td><td><b>11.46</b></td><td><b>57.69</b></td>
+            <td>11.92</td><td>2.72</td><td>52.90</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="fig-cap has-text-centered" style="margin-bottom: 30px;">
+      <b>Table 2:</b> Zero-shot comparison on three medical VQA benchmarks. All models use 7B LLM.
+      <b>Bold</b> = best among Med-IM trained models.
+    </p>
+
+    <!-- Key observations -->
+    <div class="columns">
+      <div class="column">
+        <div class="callout teal">
+          <span class="callout-label">Observation 1</span>
+          <p>
+            <b>Medical pre-training is unnecessary.</b> Fine-tuning a general-purpose LVLM on
+            a small set of medical instruction data achieves the same performance as fully
+            training on medical data, suggesting strong vision-language alignment transfers well.
+          </p>
+        </div>
+      </div>
+      <div class="column">
+        <div class="callout teal">
+          <span class="callout-label">Observation 2</span>
+          <p>
+            <b>DPO improves open-ended answers.</b> After DPO training, performance on open-ended
+            questions improves significantly, showing that supervised preference optimization
+            effectively controls the model to generate more detailed, relevant responses.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== FINE-TUNING RESULTS ==================== -->
+<section class="section" style="background: var(--surface);">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Results: Fine-Tuning on Downstream Tasks</h2>
+    <div class="section-bar"></div>
+
+    <div class="content has-text-justified" style="max-width: 800px; margin: 0 auto 20px auto;">
+      <p>
+        Beyond zero-shot evaluation, we also fine-tune on downstream tasks by combining
+        Med-IM with training sets from VQA-RAD, SLAKE, and PVQA. STLLaVA-Med shows clear
+        improvement over the baseline LLaVA-v1.5, confirming the effectiveness of the
+        self-training pipeline.
+      </p>
+    </div>
+
+    <div style="max-width: 750px; margin: 0 auto;">
+      <div class="med-table" style="overflow-x: auto;">
+        <table class="table is-fullwidth" style="font-size: 0.85rem;">
+          <thead>
+            <tr>
+              <th style="min-width: 160px;">Method</th>
+              <th colspan="3" style="text-align:center !important;">VQA-RAD</th>
+              <th colspan="3" style="text-align:center !important;">SLAKE</th>
+              <th colspan="3" style="text-align:center !important;">PVQA</th>
+            </tr>
+            <tr>
+              <th></th>
+              <th>Recall</th><th>F1</th><th>Closed</th>
+              <th>Recall</th><th>F1</th><th>Closed</th>
+              <th>Recall</th><th>F1</th><th>Closed</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>LLaVA-v1.5</td>
+              <td>43.44</td><td>36.41</td><td>70.59</td>
+              <td>52.76</td><td>46.98</td><td>64.18</td>
+              <td>35.91</td><td>35.47</td><td>91.15</td>
+            </tr>
+            <tr>
+              <td>STLLaVA-Med w/o DPO</td>
+              <td>52.07</td><td>45.38</td><td>75.74</td>
+              <td>56.10</td><td>50.77</td><td>67.31</td>
+              <td>38.05</td><td>37.76</td><td>92.13</td>
+            </tr>
+            <tr class="ours-row">
+              <td>STLLaVA-Med</td>
+              <td><b>52.60</b></td><td><b>45.92</b></td><td><b>76.10</b></td>
+              <td><b>57.37</b></td><td><b>50.84</b></td><td>67.31</td>
+              <td><b>38.30</b></td><td><b>38.00</b></td><td>92.13</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="fig-cap has-text-centered" style="margin-top: 8px;">
+        <b>Table 4:</b> Fine-tuning performance on downstream medical VQA tasks.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== QUALITATIVE ==================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3 has-text-centered">Qualitative Results</h2>
+    <div class="section-bar"></div>
+
+    <div class="content has-text-justified" style="max-width: 800px; margin: 0 auto 24px auto;">
+      <p>
+        After DPO fine-tuning, STLLaVA-Med generates answers with <b>higher relevance,
+        more detail, and better accuracy</b> compared to the model without DPO. The
+        preference optimization effectively steers the model toward more informative
+        and clinically useful responses.
+      </p>
+    </div>
+
+    <!-- TODO: Replace with Figure 4 from the paper (spleen qualitative example).
+         Save as: ./static/images/qualitative_1.png -->
+    <div class="fig-box" style="margin-bottom: 24px;">
+      <img src="./static/images/qualitative_1.png" alt="Qualitative comparison: spleen abnormality">
+    </div>
+    <p class="fig-cap has-text-centered" style="margin-bottom: 30px;">
+      <b>Figure 4:</b> STLLaVA-Med provides more detailed and medically accurate explanations
+      (e.g., explaining hypodense lesions as areas appearing darker on CT with lower density)
+      compared to the model without DPO.
+    </p>
+
+    <!-- TODO: Replace with Figure 5 from the paper (additional qualitative examples).
+         Save as: ./static/images/qualitative_2.png -->
+    <div class="fig-box" style="margin-bottom: 24px;">
+      <img src="./static/images/qualitative_2.png" alt="Additional qualitative comparisons">
+    </div>
+    <p class="fig-cap has-text-centered" style="margin-bottom: 30px;">
+      <b>Figure 5:</b> Additional qualitative comparisons showing STLLaVA-Med generating more
+      comprehensive, preference-aligned medical responses.
+    </p>
+
+    <!-- TODO: Replace with Figure 6 from the paper (preference data visualization).
+         Save as: ./static/images/preference_data.png -->
+    <div class="fig-box" style="margin-bottom: 16px;">
+      <img src="./static/images/preference_data.png" alt="Preference data visualization">
+    </div>
+    <p class="fig-cap has-text-centered">
+      <b>Figure 6:</b> Preference data visualization. GPT-4o selects answers with more detail and
+      in-depth analysis as winning responses, aligning with human preference for comprehensive
+      medical explanations.
+    </p>
+  </div>
+</section>
+
+
+<!-- ==================== BIBTEX ==================== -->
+<section class="section" style="background: var(--surface);" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title has-text-centered">BibTeX</h2>
+    <div class="section-bar"></div>
+    <pre><code>@inproceedings{sun2024stllavamed,
+  title     = {Self-Training Large Language and Vision Assistant
+               for Medical Question-Answering},
+  author    = {Sun, Guohao and Qin, Can and Fu, Huazhu
+               and Wang, Linwei and Tao, Zhiqiang},
+  booktitle = {Proceedings of the 2024 Conference on Empirical
+               Methods in Natural Language Processing (EMNLP)},
+  year      = {2024},
+  pages     = {20052--20060},
+}</code></pre>
+  </div>
+</section>
+
+
+<!-- ==================== ACKNOWLEDGMENTS ==================== -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-4 has-text-centered">Acknowledgments</h2>
+    <div class="content has-text-justified" style="max-width: 700px; margin: 0 auto;">
+      <p>
+        This work is in part supported by NIH award R01NR018301.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="footer" style="padding: 28px 0;">
+  <div class="container">
+    <div class="content has-text-centered">
+      <a class="icon-link" href="https://aclanthology.org/2024.emnlp-main.1119/" style="margin: 0 8px;">
+        <i class="fas fa-file-pdf" style="font-size: 1.3rem;"></i>
+      </a>
+      <a class="icon-link" href="https://github.com/heliossun/STLLaVA-Med" style="margin: 0 8px;">
+        <i class="fab fa-github" style="font-size: 1.3rem;"></i>
+      </a>
+    </div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content has-text-centered" style="font-size: 0.85rem; color: var(--text-body);">
+          <p>
+            This website is based on the
+            <a href="https://github.com/nerfies/nerfies.github.io">Nerfies</a> project page template,
+            licensed under
+            <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
